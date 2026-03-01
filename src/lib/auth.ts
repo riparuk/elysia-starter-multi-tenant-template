@@ -3,6 +3,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { openAPI } from "better-auth/plugins";
 import { db } from "./database";
 import * as schema from "../../drizzle/schemas"
+import { env } from "./env";
 
 export const auth = betterAuth({
     basePath: "/api",
@@ -16,6 +17,20 @@ export const auth = betterAuth({
         enabled: true,
     },
     plugins: [openAPI()],
+    trustedOrigins: env.CORS_ORIGIN,
+
+    rateLimit: {
+        enabled: false
+    },
+
+    advanced: {
+        useSecureCookies: true,
+        defaultCookieAttributes: {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none",
+        },
+    },
     //...
 });
 

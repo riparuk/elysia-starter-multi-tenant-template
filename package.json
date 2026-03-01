@@ -8,6 +8,7 @@
     "start": "./.output/server"
   },
   "dependencies": {
+    "@elysiajs/cors": "^1.4.1",
     "@elysiajs/openapi": "^1.4.14",
     "better-auth": "^1.5.0",
     "dotenv": "^17.3.1",

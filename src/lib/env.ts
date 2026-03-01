@@ -11,7 +11,7 @@ const envSchema = z.object({
 
     BETTER_AUTH_URL: z.string().url(),
 
-    CORS_ORIGIN: z.string().optional()
+    CORS_ORIGIN: z.string().optional().transform(val => val ? val.split(',').map(u => u.trim()) : [])
 })
 
 const parsed = envSchema.safeParse(process.env)

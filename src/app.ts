@@ -4,6 +4,7 @@ import { openapi } from "@elysiajs/openapi";
 import { OpenAPI } from "./lib/auth";
 import { env } from "./lib/env";
 import cors from '@elysiajs/cors'
+import { healthCheck } from "./utils/health-check";
 
 export const app = new Elysia()
   .use(
@@ -23,6 +24,6 @@ export const app = new Elysia()
   .mount("/auth", auth.handler)
 
   // Health Check
-  .get("/", () => "Hello World")
+  .get("/", () => healthCheck())
 
 export type App = typeof app

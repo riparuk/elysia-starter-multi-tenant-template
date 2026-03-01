@@ -1,5 +1,12 @@
+## Name convention
+- File name must be in kebab-case.
+- Folder name must be in kebab-case.
+
 ## Structure File Projects
-- 
+- `src/core/`: Foundation components (errors, global middlewares, core interfaces) that are agnostic to business logic.
+- `src/lib/`: Configurations and wrappers for external libraries/services (Database setup, Redis, Email client, etc.).
+- `src/modules/`: Business logic and features grouped by domain (e.g., `auth`). This is where the main API logic lives.
+- `src/utils/`: Shared general-purpose utility functions.
 
 ## How to run project
 - Run development server using the bun dev command:

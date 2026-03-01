@@ -12,4 +12,9 @@ To start the development server run:
 bun run dev
 ```
 
+Jika ingin menerapkan semua migrasi dari awal ke database:
+```bash
+bunx drizzle-kit up
+```
+
 Open http://localhost:3000/ with your browser to see the result.

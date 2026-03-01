@@ -3,13 +3,23 @@
   "version": "1.0.50",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "bun run --watch src/index.ts"
+    "dev": "bun run --watch src/main.ts",
+    "build": "bunx tsc --noEmit && bun build --compile --minify-whitespace --minify-syntax --target bun --outfile ./.output/server ./src/main.ts",
+    "start": "./.output/server"
   },
   "dependencies": {
-    "elysia": "latest"
+    "@elysiajs/openapi": "^1.4.14",
+    "better-auth": "^1.5.0",
+    "dotenv": "^17.3.1",
+    "drizzle-orm": "^0.45.1",
+    "elysia": "latest",
+    "pg": "^8.19.0"
   },
   "devDependencies": {
-    "bun-types": "latest"
+    "@types/pg": "^8.18.0",
+    "bun-types": "latest",
+    "drizzle-kit": "^0.31.9",
+    "tsx": "^4.21.0"
   },
   "module": "src/index.js"
 }

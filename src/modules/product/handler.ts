@@ -4,11 +4,15 @@ import { ProductService } from "./service";
 import { ProductModel } from "./model";
 import { formatResponse, FormatResponseSchema } from "../../core/format-response";
 import { buildPaginationMeta } from "../../core/pagination";
+import { authMiddleware } from "../../middleware/auth-middleware";
 
 export const productHandler = new Elysia({
     prefix: "/products",
     tags: ["Product"],
 })
+    // Auth middleware
+    .use(authMiddleware)
+
     // GET /products — list with pagination
     .get(
         "/",
@@ -22,7 +26,7 @@ export const productHandler = new Elysia({
         },
         {
             query: ProductModel.ProductQuery,
-            response: FormatResponseSchema(t.Array(ProductModel.ProductResponse)),
+            response: FormatResponseSchema(t.Array(ProductModel.ProductWithUserResponse)),
         },
     )
 
@@ -35,18 +39,37 @@ export const productHandler = new Elysia({
         },
         {
             params: t.Object({ id: t.String() }),
-            response: FormatResponseSchema(ProductModel.ProductResponse),
+            response: FormatResponseSchema(ProductModel.ProductWithUserResponse),
+        },
+    )
+
+    // GET /products/my-products — list with pagination
+    .get(
+        "/my-products",
+        async ({ query, path, user }) => {
+            const { data, totalItems, pagination } = await ProductService.getAllMyProducts(query, user?.id);
+            return formatResponse({
+                path,
+                data,
+                meta: buildPaginationMeta(pagination, totalItems),
+            });
+        },
+        {
+            requireAuth: true,
+            query: ProductModel.ProductQuery,
+            response: FormatResponseSchema(t.Array(ProductModel.ProductResponse)),
         },
     )
 
     // POST /products — create
     .post(
         "/",
-        async ({ body, path }) => {
-            const data = await ProductService.create(body);
+        async ({ body, path, user }) => {
+            const data = await ProductService.create(body, user?.id);
             return formatResponse({ path, data, status: 201, message: "Product created" });
         },
         {
+            requireAuth: true,
             body: ProductModel.ProductInputCreate,
             response: FormatResponseSchema(ProductModel.ProductResponse),
         },
@@ -55,11 +78,12 @@ export const productHandler = new Elysia({
     // PATCH /products/:id — update
     .patch(
         "/:id",
-        async ({ params: { id }, body, path }) => {
-            const data = await ProductService.update(id, body);
+        async ({ params: { id }, body, path, user }) => {
+            const data = await ProductService.update(id, body, user?.id);
             return formatResponse({ path, data, message: "Product updated" });
         },
         {
+            requireAuth: true,
             params: t.Object({ id: t.String() }),
             body: ProductModel.ProductInputUpdate,
             response: FormatResponseSchema(ProductModel.ProductResponse),
@@ -69,11 +93,12 @@ export const productHandler = new Elysia({
     // DELETE /products/:id — delete
     .delete(
         "/:id",
-        async ({ params: { id }, path }) => {
-            const data = await ProductService.delete(id);
+        async ({ params: { id }, path, user }) => {
+            const data = await ProductService.delete(id, user?.id);
             return formatResponse({ path, data, message: "Product deleted" });
         },
         {
+            requireAuth: true,
             params: t.Object({ id: t.String() }),
             response: FormatResponseSchema(ProductModel.ProductResponse),
         },

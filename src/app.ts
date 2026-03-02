@@ -34,7 +34,7 @@ export const app = new Elysia()
   // Health Check
   .get("/health-check", () => healthCheck())
   .get("/", () => {
-    throw new AppError("Not Found", 404)
+    throw new AppError("Not Found", "NOT_FOUND")
   })
 
   // Modules

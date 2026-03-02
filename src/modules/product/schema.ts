@@ -1,8 +1,10 @@
 import { pgTable, text, numeric, integer, timestamp } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
+import { user } from "../auth/schema";
 
 export const product = pgTable("product", {
     id: text("id").primaryKey(),
+    userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     description: text("description"),
     price: numeric("price", { precision: 12, scale: 2 }).notNull(),
@@ -14,5 +16,10 @@ export const product = pgTable("product", {
         .notNull(),
 });
 
-export type Product = typeof product.$inferSelect;
-export type ProductInsert = typeof product.$inferInsert;
+// one to one relationship between product and user
+export const productRelations = relations(product, ({ one }) => ({
+    user: one(user, {
+        fields: [product.userId],
+        references: [user.id],
+    }),
+}));

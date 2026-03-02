@@ -1,5 +1,6 @@
 ## Technical Rules
 - Always use 'AppError' class for error handling (src/core/error.ts).
+- Explicit dto must be defined in model.ts file.
 
 ## Name convention
 - File name must be in kebab-case.
@@ -10,6 +11,9 @@
 - `src/lib/`: Configurations and wrappers for external libraries/services (Database setup, Redis, Email client, etc.).
 - `src/modules/`: Business logic and features grouped by domain (e.g., `auth`). This is where the main API logic lives.
 - `src/utils/`: Shared general-purpose utility functions.
+
+# Example to follow
+- check module folder structure in src/modules/product/ for example, include how to use middleware, model, pagination, schema, and service.
 
 ## How to run project
 - Run development server using the bun dev command:
@@ -37,7 +41,7 @@ If you make any changes in schema, you need to generate migrations and apply the
 
 Generate migrations:
 ```bash
-bunx drizzle-kit generate
+bunx drizzle-kit generate --name "<migration-name>"
 ```
 
 Check database schema:

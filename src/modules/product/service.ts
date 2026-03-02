@@ -1,19 +1,33 @@
 // Service handles business logic, decoupled from Elysia controller
-import { eq, ilike, sql } from "drizzle-orm";
+import { and, eq, ilike, sql, count } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
 import { db } from "../../lib/database";
 import { PaginatedResult, normalizePagination } from "../../core/pagination";
-import { product, Product } from "./schema";
+import { product } from "./schema";
 import { ProductModel } from "./model";
-import { AppError, ERROR_CODES } from "../../core/error";
+import { AppError } from "../../core/error";
 
 // Abstract class as it carries no instance state
 export abstract class ProductService {
 
+    private static async checkProductOwnership(productId: string, userId: string): Promise<void> {
+        const row = await db.query.product.findFirst({
+            where: eq(product.id, productId),
+        });
+
+        if (!row) {
+            throw new AppError("Product not found", "NOT_FOUND");
+        }
+
+        if (row.userId !== userId) {
+            throw new AppError("You are not authorized to perform this action", "UNAUTHORIZED");
+        }
+    }
+
     static async getAll(
         query?: ProductModel.ProductQuery,
-    ): Promise<PaginatedResult<Product>> {
+    ): Promise<PaginatedResult<ProductModel.ProductWithUserResponse>> {
         const pagination = normalizePagination(query);
 
         const where = query?.q
@@ -21,15 +35,18 @@ export abstract class ProductService {
             : undefined;
 
         const [data, countResult] = await Promise.all([
+            db.query.product.findMany({
+                where: where,
+                limit: pagination.take,
+                offset: pagination.skip,
+                orderBy: product.createdAt,
+                // With Include
+                with: {
+                    user: true
+                }
+            }),
             db
-                .select()
-                .from(product)
-                .where(where)
-                .limit(pagination.take)
-                .offset(pagination.skip)
-                .orderBy(product.createdAt),
-            db
-                .select({ count: sql<number>`count(*)::int` })
+                .select({ count: count() })
                 .from(product)
                 .where(where),
         ]);
@@ -37,25 +54,55 @@ export abstract class ProductService {
         return { data, totalItems: countResult[0]?.count ?? 0, pagination };
     }
 
-    static async getById(id: string): Promise<Product> {
-        const [row] = await db
-            .select()
-            .from(product)
-            .where(eq(product.id, id))
-            .limit(1);
+    static async getById(id: string): Promise<ProductModel.ProductWithUserResponse> {
+        const row = await db.query.product.findFirst({
+            where: eq(product.id, id),
+            // With Include
+            with: {
+                user: true
+            }
+        });
 
         if (!row) {
-            throw new AppError("Product not found", ERROR_CODES.NOT_FOUND);
+            throw new AppError("Product not found", "NOT_FOUND");
         }
 
         return row;
     }
 
-    static async create(data: ProductModel.ProductInputCreate): Promise<Product> {
+    static async getAllMyProducts(
+        query?: ProductModel.ProductQuery,
+        userId?: string,
+    ): Promise<PaginatedResult<ProductModel.ProductResponse>> {
+        const pagination = normalizePagination(query);
+
+        const where = and(
+            userId ? eq(product.userId, userId) : undefined,
+            query?.q ? ilike(product.name, `%${query.q}%`) : undefined
+        );
+
+        const [data, countResult] = await Promise.all([
+            db.query.product.findMany({
+                where: where,
+                limit: pagination.take,
+                offset: pagination.skip,
+                orderBy: product.createdAt,
+            }),
+            db
+                .select({ count: count() })
+                .from(product)
+                .where(where),
+        ]);
+
+        return { data, totalItems: countResult[0]?.count ?? 0, pagination };
+    }
+
+    static async create(data: ProductModel.ProductInputCreate, userId: string): Promise<ProductModel.ProductResponse> {
         const [row] = await db
             .insert(product)
             .values({
                 id: nanoid(),
+                userId,
                 name: data.name,
                 description: data.description ?? null,
                 price: String(data.price),
@@ -63,12 +110,12 @@ export abstract class ProductService {
             })
             .returning();
 
-        return row!;
+        return row;
     }
 
-    static async update(id: string, data: ProductModel.ProductInputUpdate): Promise<Product> {
-        // Ensure product exists first
-        await this.getById(id);
+    static async update(id: string, data: ProductModel.ProductInputUpdate, userId: string): Promise<ProductModel.ProductResponse> {
+        // Check product ownership
+        await this.checkProductOwnership(id, userId);
 
         const [row] = await db
             .update(product)
@@ -81,18 +128,18 @@ export abstract class ProductService {
             .where(eq(product.id, id))
             .returning();
 
-        return row!;
+        return row;
     }
 
-    static async delete(id: string): Promise<Product> {
-        // Ensure product exists first
-        await this.getById(id);
+    static async delete(id: string, userId: string): Promise<ProductModel.ProductResponse> {
+        // Check product ownership
+        await this.checkProductOwnership(id, userId);
 
         const [row] = await db
             .delete(product)
             .where(eq(product.id, id))
             .returning();
 
-        return row!;
+        return row;
     }
 }

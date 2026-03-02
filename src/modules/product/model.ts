@@ -30,6 +30,23 @@ export namespace ProductModel {
     });
     export type ProductResponse = typeof ProductResponse.static;
 
+    export const ProductWithUserResponse = t.Object({
+        id: t.String(),
+        name: t.String(),
+        description: t.Nullable(t.String()),
+        price: t.String(),   // numeric comes back as string from pg-driver
+        stock: t.Number(),
+        createdAt: t.Date(),
+        updatedAt: t.Date(),
+        user: t.Object({
+            id: t.String(),
+            name: t.String(),
+            email: t.String(),
+            image: t.Nullable(t.String()),
+        }),
+    });
+    export type ProductWithUserResponse = typeof ProductWithUserResponse.static;
+
     export const ProductQuery = t.Object({
         q: t.Optional(t.String()),
         page: t.Optional(t.Numeric()),

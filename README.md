@@ -72,6 +72,21 @@ bunx drizzle-kit migrate
 
 > **Warning:** Never reset or drop the database directly in a production environment. Avoid using commands like `drizzle-kit up`, `drizzle-kit push`, or `drizzle-kit drop`.
 
+## Docker
+
+This project can be run using Docker. Here's how to build and run it:
+
+1. **Build Docker Image:**
+```bash
+docker build -t elysia-app .
+```
+
+2. **Run Docker Container:**
+```bash
+# Replace the database URL with your own
+docker run -p 3000:3000 --env-file .env elysia-app
+```
+
 ## Testing
 
 This project uses the built-in `bun test` runner for testing. Tests are located in the `tests/` directory.

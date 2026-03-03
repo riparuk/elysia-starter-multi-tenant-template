@@ -45,6 +45,12 @@ Run the production server:
 bun run start
 ```
 
+Format the code and fix lint errors:
+```bash
+bun run format
+bun run lint:fix
+```
+
 ### Endpoints
 - **API Base:** `http://localhost:3000/`
 - **OpenAPI / Swagger UI:** `http://localhost:3000/openapi`

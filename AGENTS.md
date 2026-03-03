@@ -39,6 +39,8 @@ tests/
 | `bun run dev` | Start the development server with hot reload |
 | `bun run build` | Type-check and compile a production binary to `.output/server` |
 | `bun run start` | Run the compiled production binary |
+| `bun run lint:fix` | Fix lint errors via ESLint |
+| `bun run format` | Format all source files via Prettier |
 | `bun test` | Run all tests |
 | `bun test <pattern>` | Run tests matching a name or path pattern (e.g., `bun test auth`) |
 | `bunx drizzle-kit generate --name <name>` | Generate a migration from schema changes |
@@ -53,6 +55,7 @@ tests/
 
 - **Language:** TypeScript (strict).
 - **Indentation:** 4 spaces.
+- **Linting & Formatting:** ESLint (flat config) and Prettier have been set up. Always pass linting checks before committing.
 - **File & folder names:** `kebab-case` only (e.g., `product-handler.ts`, `my-module/`).
 - **Error handling:** Always throw `AppError` from `src/core/error.ts` — never throw plain errors or `new Error(...)`.
 - **DTOs:** Define all request/response shapes in the module's `model.ts`. Use the same DTO types consistently across `handler.ts` and `service.ts`.

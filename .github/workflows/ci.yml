@@ -37,7 +37,7 @@ jobs:
       - name: Typecheck & Build
         run: bun run build
       - name: Push Database Schema
-        run: bunx drizzle-kit push
+        run: bunx drizzle-kit push --force
         env:
           DATABASE_URL: postgresql://postgres:password@localhost:5432/elysia_test
       - name: Test

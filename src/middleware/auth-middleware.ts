@@ -25,22 +25,14 @@ export const authMiddleware = new Elysia()
 				}
 			}
 		},
-		// 2️⃣ ADMIN (check role)
-		requireAdmin: {
-			async resolve({ user }) {
-				if (!user) throw new AppError('Unauthorized', 'UNAUTHORIZED')
-
-				// Assuming the user object from better-auth retains the 'role' field we added to the schema.
-				// We cast to 'any' to avoid TS errors if better-auth types aren't fully synced yet.
-				if (user.role !== 'admin') {
-					throw new AppError(
-						'Forbidden: Admin access required',
-						'FORBIDDEN'
-					)
+		requireOrganization: {
+			async resolve({ session }) {
+				if (!session?.activeOrganizationId) {
+					throw new AppError('Organization not selected', 'FORBIDDEN')
 				}
 
 				return {
-					user: user
+					activeOrganizationId: session.activeOrganizationId
 				}
 			}
 		}

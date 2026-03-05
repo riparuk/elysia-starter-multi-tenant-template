@@ -12,7 +12,7 @@ import { AppError } from '../../core/error'
 export abstract class ProductService {
 	private static async checkProductOwnership(
 		productId: string,
-		userId: string
+		organizationId: string
 	): Promise<void> {
 		const row = await db.query.product.findFirst({
 			where: eq(product.id, productId)
@@ -22,20 +22,24 @@ export abstract class ProductService {
 			throw new AppError('Product not found', 'NOT_FOUND')
 		}
 
-		if (row.userId !== userId) {
+		if (row.organizationId !== organizationId) {
 			throw new AppError(
-				'You are not authorized to perform this action',
+				'You are not authorized to perform this action in this organization',
 				'UNAUTHORIZED'
 			)
 		}
 	}
 
 	static async getAll(
-		query?: ProductModel.ProductQuery
+		query: ProductModel.ProductQuery | undefined,
+		organizationId: string
 	): Promise<PaginatedResult<ProductModel.ProductWithUserResponse>> {
 		const pagination = normalizePagination(query)
 
-		const where = query?.q ? ilike(product.name, `%${query.q}%`) : undefined
+		const where = and(
+			eq(product.organizationId, organizationId),
+			query?.q ? ilike(product.name, `%${query.q}%`) : undefined
+		)
 
 		const [data, countResult] = await Promise.all([
 			db.query.product.findMany({
@@ -55,10 +59,14 @@ export abstract class ProductService {
 	}
 
 	static async getById(
-		id: string
+		id: string,
+		organizationId: string
 	): Promise<ProductModel.ProductWithUserResponse> {
 		const row = await db.query.product.findFirst({
-			where: eq(product.id, id),
+			where: and(
+				eq(product.id, id),
+				eq(product.organizationId, organizationId)
+			),
 			// With Include
 			with: {
 				user: true
@@ -73,13 +81,15 @@ export abstract class ProductService {
 	}
 
 	static async getAllMyProducts(
-		query?: ProductModel.ProductQuery,
-		userId?: string
+		query: ProductModel.ProductQuery | undefined,
+		userId: string,
+		organizationId: string
 	): Promise<PaginatedResult<ProductModel.ProductResponse>> {
 		const pagination = normalizePagination(query)
 
 		const where = and(
-			userId ? eq(product.userId, userId) : undefined,
+			eq(product.organizationId, organizationId),
+			eq(product.userId, userId),
 			query?.q ? ilike(product.name, `%${query.q}%`) : undefined
 		)
 
@@ -98,12 +108,14 @@ export abstract class ProductService {
 
 	static async create(
 		data: ProductModel.ProductInputCreate,
-		userId: string
+		userId: string,
+		organizationId: string
 	): Promise<ProductModel.ProductResponse> {
 		const [row] = await db
 			.insert(product)
 			.values({
 				id: nanoid(),
+				organizationId,
 				userId,
 				name: data.name,
 				description: data.description ?? null,
@@ -118,10 +130,10 @@ export abstract class ProductService {
 	static async update(
 		id: string,
 		data: ProductModel.ProductInputUpdate,
-		userId: string
+		organizationId: string
 	): Promise<ProductModel.ProductResponse> {
-		// Check product ownership
-		await this.checkProductOwnership(id, userId)
+		// Check product ownership inside organization
+		await this.checkProductOwnership(id, organizationId)
 
 		const [row] = await db
 			.update(product)
@@ -141,10 +153,10 @@ export abstract class ProductService {
 
 	static async delete(
 		id: string,
-		userId: string
+		organizationId: string
 	): Promise<ProductModel.ProductResponse> {
-		// Check product ownership
-		await this.checkProductOwnership(id, userId)
+		// Check product ownership inside organization
+		await this.checkProductOwnership(id, organizationId)
 
 		const [row] = await db
 			.delete(product)

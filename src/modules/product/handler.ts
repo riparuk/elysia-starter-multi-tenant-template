@@ -19,9 +19,9 @@ export const productHandler = new Elysia({
 	// GET /products — list with pagination
 	.get(
 		'/',
-		async ({ query, path }) => {
+		async ({ query, path, activeOrganizationId }) => {
 			const { data, totalItems, pagination } =
-				await ProductService.getAll(query)
+				await ProductService.getAll(query, activeOrganizationId)
 			return formatResponse({
 				path,
 				data,
@@ -29,7 +29,7 @@ export const productHandler = new Elysia({
 			})
 		},
 		{
-			requireAdmin: true, // need admin role
+			requireOrganization: true,
 			query: ProductModel.ProductQuery,
 			response: FormatResponseSchema(
 				t.Array(ProductModel.ProductWithUserResponse)
@@ -40,11 +40,12 @@ export const productHandler = new Elysia({
 	// GET /products/:id — single product
 	.get(
 		'/:id',
-		async ({ params: { id }, path }) => {
-			const data = await ProductService.getById(id)
+		async ({ params: { id }, path, activeOrganizationId }) => {
+			const data = await ProductService.getById(id, activeOrganizationId)
 			return formatResponse({ path, data })
 		},
 		{
+			requireOrganization: true,
 			params: t.Object({ id: t.String() }),
 			response: FormatResponseSchema(ProductModel.ProductWithUserResponse)
 		}
@@ -53,9 +54,13 @@ export const productHandler = new Elysia({
 	// GET /products/my-products — list with pagination
 	.get(
 		'/my-products',
-		async ({ query, path, user }) => {
+		async ({ query, path, user, activeOrganizationId }) => {
 			const { data, totalItems, pagination } =
-				await ProductService.getAllMyProducts(query, user?.id)
+				await ProductService.getAllMyProducts(
+					query,
+					user.id,
+					activeOrganizationId
+				)
 			return formatResponse({
 				path,
 				data,
@@ -64,6 +69,7 @@ export const productHandler = new Elysia({
 		},
 		{
 			requireAuth: true, // need auth role
+			requireOrganization: true,
 			query: ProductModel.ProductQuery,
 			response: FormatResponseSchema(
 				t.Array(ProductModel.ProductResponse)
@@ -74,8 +80,12 @@ export const productHandler = new Elysia({
 	// POST /products — create
 	.post(
 		'/',
-		async ({ body, path, user }) => {
-			const data = await ProductService.create(body, user?.id)
+		async ({ body, path, user, activeOrganizationId }) => {
+			const data = await ProductService.create(
+				body,
+				user.id,
+				activeOrganizationId
+			)
 			return formatResponse({
 				path,
 				data,
@@ -85,6 +95,7 @@ export const productHandler = new Elysia({
 		},
 		{
 			requireAuth: true, // need auth role
+			requireOrganization: true,
 			body: ProductModel.ProductInputCreate,
 			response: FormatResponseSchema(ProductModel.ProductResponse)
 		}
@@ -93,12 +104,17 @@ export const productHandler = new Elysia({
 	// PATCH /products/:id — update
 	.patch(
 		'/:id',
-		async ({ params: { id }, body, path, user }) => {
-			const data = await ProductService.update(id, body, user?.id)
+		async ({ params: { id }, body, path, activeOrganizationId }) => {
+			const data = await ProductService.update(
+				id,
+				body,
+				activeOrganizationId
+			)
 			return formatResponse({ path, data, message: 'Product updated' })
 		},
 		{
 			requireAuth: true, // need auth role
+			requireOrganization: true,
 			params: t.Object({ id: t.String() }),
 			body: ProductModel.ProductInputUpdate,
 			response: FormatResponseSchema(ProductModel.ProductResponse)
@@ -108,12 +124,13 @@ export const productHandler = new Elysia({
 	// DELETE /products/:id — delete
 	.delete(
 		'/:id',
-		async ({ params: { id }, path, user }) => {
-			const data = await ProductService.delete(id, user?.id)
+		async ({ params: { id }, path, activeOrganizationId }) => {
+			const data = await ProductService.delete(id, activeOrganizationId)
 			return formatResponse({ path, data, message: 'Product deleted' })
 		},
 		{
 			requireAuth: true, // need auth role
+			requireOrganization: true,
 			params: t.Object({ id: t.String() }),
 			response: FormatResponseSchema(ProductModel.ProductResponse)
 		}

@@ -1,6 +1,6 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
-import { emailOTP, openAPI } from 'better-auth/plugins'
+import { emailOTP, openAPI, organization } from 'better-auth/plugins'
 import { db } from './database'
 import * as schema from '../../drizzle/schemas'
 import { env } from './env'
@@ -23,7 +23,8 @@ export const auth = betterAuth({
 			async sendVerificationOTP({ email, otp, type }) {
 				await sendOtpEmail({ to: email, otp, purpose: type })
 			}
-		})
+		}),
+		organization()
 	],
 	trustedOrigins: env.CORS_ORIGIN,
 
@@ -37,15 +38,6 @@ export const auth = betterAuth({
 			httpOnly: true,
 			secure: true,
 			sameSite: 'none'
-		}
-	},
-
-	user: {
-		additionalFields: {
-			role: {
-				type: 'string',
-				default: 'user'
-			}
 		}
 	}
 

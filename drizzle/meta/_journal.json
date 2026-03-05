@@ -8,6 +8,20 @@
       "when": 1772523982999,
       "tag": "20260303074622_brainy_scrambler",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1772723582723,
+      "tag": "20260305151302_add organization multi tenant",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1772725036904,
+      "tag": "20260305153716_add_organization_id_to_products",
+      "breakpoints": true
     }
   ]
 }

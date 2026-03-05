@@ -1,9 +1,12 @@
 import { pgTable, text, numeric, integer, timestamp } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
-import { user } from '../auth/schema'
+import { user, organization } from '../auth/schema'
 
 export const product = pgTable('product', {
 	id: text('id').primaryKey(),
+	organizationId: text('organization_id')
+		.notNull()
+		.references(() => organization.id, { onDelete: 'cascade' }),
 	userId: text('user_id')
 		.notNull()
 		.references(() => user.id, { onDelete: 'cascade' }),
@@ -18,10 +21,13 @@ export const product = pgTable('product', {
 		.notNull()
 })
 
-// one to one relationship between product and user
 export const productRelations = relations(product, ({ one }) => ({
 	user: one(user, {
 		fields: [product.userId],
 		references: [user.id]
+	}),
+	organization: one(organization, {
+		fields: [product.organizationId],
+		references: [organization.id]
 	})
 }))

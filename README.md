@@ -28,6 +28,12 @@ This project enforces a strict, modular directory structure to cleanly separate 
 - Explicit DTOs must be defined in the `model.ts` file. Make sure they are consistently used between handlers and services.
 - File and folder names must logically use `kebab-case`.
 
+### Multi-Tenancy (Better Auth Organizations)
+This template is configured for multi-tenant (B2B) applications using Better Auth's Organization plugin.
+- The database schema includes `organization`, `member`, and `invitation` tables.
+- Route handlers can enforce organization context using the `requireOrganization: true` macro in `auth-middleware.ts`.
+- When `requireOrganization: true` is set, the active organization ID is injected into the context as `activeOrganizationId`. Modules should use this ID to scope data queries and mutations.
+
 ## Development
 
 Start the development server using the watch mode:

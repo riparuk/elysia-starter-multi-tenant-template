@@ -61,6 +61,7 @@ tests/
 - **DTOs:** Define all request/response shapes in the module's `model.ts`. Use the same DTO types consistently across `handler.ts` and `service.ts`.
 - **No magic strings:** Use enums or constants for status codes and error types.
 - **Don't use 'any' type:** Use proper types instead of 'any' as much as possible
+- **Multi-Tenant Scoping:** If a resource belongs to an organization, ensure its table has an `organizationId` foreign key (referencing `organization.id`). Use the `requireOrganization: true` macro in the handler to enforce tenant isolation and access `activeOrganizationId`. Service methods must always filter and insert data using the `organizationId`.
 - **Always make tests for new features:** For every new feature, create a new test file in the `tests/modules/` directory.
 - **Don't edit product module:** The product module is a template and should not be edited. Use it as a reference to create new modules.
 
@@ -109,12 +110,14 @@ describe("My Module Tests", () => {
         expect(status).toBe(200);
     });
 
-    it("should return 401 without auth", async () => {
-        const { status } = await tClient.api.myResource.post({ field: "value" });
-        expect(status).toBe(401);
-    });
+    	it("should return 401 without auth", async () => {
+		const { status } = await tClient.api.myResource.post({ field: "value" });
+		expect(status).toBe(401);
+	});
 });
 ```
+
+> **Note on Multi-Tenant Tests:** For endpoints using `requireOrganization: true`, you must first create an organization and set it as active on the client/test side (e.g., via `tClient.auth.api.createOrganization`) to ensure the `activeOrganizationId` is present in the session context.
 
 - See `tests/modules/product.test.ts` for a full example with create, read, and delete flows.
 - See `tests/modules/auth.test.ts` for auth-specific test patterns.

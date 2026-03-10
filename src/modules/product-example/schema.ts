@@ -2,7 +2,7 @@ import { pgTable, text, numeric, integer, timestamp } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
 import { user, organization } from '../auth/schema'
 
-export const product = pgTable('product', {
+export const productExample = pgTable('product_example', {
 	id: text('id').primaryKey(),
 	organizationId: text('organization_id')
 		.notNull()
@@ -21,13 +21,13 @@ export const product = pgTable('product', {
 		.notNull()
 })
 
-export const productRelations = relations(product, ({ one }) => ({
+export const productExampleRelations = relations(productExample, ({ one }) => ({
 	user: one(user, {
-		fields: [product.userId],
+		fields: [productExample.userId],
 		references: [user.id]
 	}),
 	organization: one(organization, {
-		fields: [product.organizationId],
+		fields: [productExample.organizationId],
 		references: [organization.id]
 	})
 }))

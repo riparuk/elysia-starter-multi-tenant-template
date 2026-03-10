@@ -7,13 +7,35 @@ const tClient = treaty(app)
 
 // Helper function to create an authenticated user and return the cookie
 async function getAuthCookie() {
-	const testEmail = `test_product_${Date.now()}_${Math.random().toString(36).substring(7)}@example.com`
+	const testEmail = `test_product_example_${Date.now()}_${Math.random().toString(36).substring(7)}@example.com`
 	const res = await (tClient as any).auth.api['sign-up'].email.post({
 		email: testEmail,
 		password: 'password123',
 		name: 'Test User'
 	})
-	return res.response?.headers.get('set-cookie') || ''
+	const cookie = res.response?.headers.get('set-cookie') || ''
+
+	// Create an organization to be active for this request
+	const orgRes = await (tClient as any).auth.api.organization.create.post(
+		{
+			name: 'Test Org',
+			slug: `test-org-${Math.random().toString(36).substring(7)}`
+		},
+		{
+			fetch: { headers: { cookie, origin: 'http://localhost' } }
+		}
+	)
+
+	const setActiveRes = await (tClient as any).auth.api.organization[
+		'set-active'
+	].post(
+		{ organizationId: orgRes.data?.id },
+		{ fetch: { headers: { cookie, origin: 'http://localhost' } } }
+	)
+
+	const finalCookie =
+		setActiveRes.response?.headers.get('set-cookie') || cookie
+	return finalCookie
 }
 
 // Helper function to create an authenticated admin and return the cookie
@@ -25,21 +47,50 @@ async function getAdminAuthCookie() {
 		name: 'Admin User',
 		role: 'admin'
 	})
-	return res.response?.headers.get('set-cookie') || ''
+	const cookie = res.response?.headers.get('set-cookie') || ''
+
+	// Create an organization to be active for this request
+	const orgRes = await (tClient as any).auth.api.organization.create.post(
+		{
+			name: 'Admin Org',
+			slug: `admin-org-${Math.random().toString(36).substring(7)}`
+		},
+		{
+			fetch: { headers: { cookie, origin: 'http://localhost' } }
+		}
+	)
+
+	// Set active organization
+	const setActiveRes = await (tClient as any).auth.api.organization[
+		'set-active'
+	].post(
+		{ organizationId: orgRes.data?.id },
+		{ fetch: { headers: { cookie, origin: 'http://localhost' } } }
+	)
+
+	return setActiveRes.response?.headers.get('set-cookie') || cookie
 }
 
 describe('Product Module Tests', () => {
 	describe('GET /products', () => {
-		it('should return 401 Unauthorized for unauthenticated requests', async () => {
-			const { status } = await tClient.api.products.get()
-			expect(status).toBe(401)
+		it('should return 403 Forbidden since unauthenticated requests lack organization', async () => {
+			const { status } = await tClient.api['product-examples'].get()
+			expect(status).toBe(403)
 		})
 
 		it('should return 403 Forbidden for a regular user', async () => {
-			const authCookie = await getAuthCookie()
-			const { status } = await tClient.api.products.get({
+			// To test 403 Forbidden for a regular user, we sign up a user but don't set an active organization
+			const testEmail = `test_product_example_forbidden_${Date.now()}@example.com`
+			const res = await (tClient as any).auth.api['sign-up'].email.post({
+				email: testEmail,
+				password: 'password123',
+				name: 'Test User'
+			})
+			const noOrgCookie = res.response?.headers.get('set-cookie') || ''
+
+			const { status } = await tClient.api['product-examples'].get({
 				fetch: {
-					headers: { cookie: authCookie }
+					headers: { cookie: noOrgCookie }
 				}
 			})
 			expect(status).toBe(403)
@@ -47,11 +98,13 @@ describe('Product Module Tests', () => {
 
 		it('should return a list of products successfully for an admin', async () => {
 			const adminCookie = await getAdminAuthCookie()
-			const { status, error } = await tClient.api.products.get({
-				fetch: {
-					headers: { cookie: adminCookie }
+			const { status, error } = await tClient.api['product-examples'].get(
+				{
+					fetch: {
+						headers: { cookie: adminCookie }
+					}
 				}
-			})
+			)
 			expect(status).toBe(200)
 			expect(error).toBeNull()
 		})
@@ -59,7 +112,7 @@ describe('Product Module Tests', () => {
 
 	describe('POST /products', () => {
 		it('should return 401 Unauthorized for unauthenticated requests', async () => {
-			const { status } = await tClient.api.products.post({
+			const { status } = await tClient.api['product-examples'].post({
 				name: 'Test Name',
 				price: 100,
 				description: 'Test Description'
@@ -69,7 +122,9 @@ describe('Product Module Tests', () => {
 
 		it('should create a new product when authenticated', async () => {
 			const authCookie = await getAuthCookie()
-			const { status, data, error } = await tClient.api.products.post(
+			const { status, data, error } = await tClient.api[
+				'product-examples'
+			].post(
 				{
 					name: 'New Product',
 					price: 1500,
@@ -95,7 +150,7 @@ describe('Product Module Tests', () => {
 			const authCookie = await getAuthCookie()
 
 			// 1. SETUP: Create a product first
-			const createRes = await tClient.api.products.post(
+			const createRes = await tClient.api['product-examples'].post(
 				{
 					name: 'Test Get ID',
 					price: 1500,
@@ -109,9 +164,9 @@ describe('Product Module Tests', () => {
 			expect(standaloneTestId).toBeDefined()
 
 			// 2. ACTION: Get the product
-			const { status, data } = await tClient.api
-				.products({ id: standaloneTestId! })
-				.get()
+			const { status, data } = await tClient.api['product-examples']({
+				id: standaloneTestId!
+			}).get({ fetch: { headers: { cookie: authCookie } } })
 			expect(status).toBe(200)
 			expect(data?.data.id).toBe(standaloneTestId)
 		})
@@ -122,7 +177,7 @@ describe('Product Module Tests', () => {
 			const authCookie = await getAuthCookie()
 
 			// 1. SETUP: Create a product
-			const createRes = await tClient.api.products.post(
+			const createRes = await tClient.api['product-examples'].post(
 				{
 					name: 'Test Delete ID',
 					price: 1500,
@@ -136,11 +191,11 @@ describe('Product Module Tests', () => {
 			expect(standaloneTestId).toBeDefined()
 
 			// 2. ACTION: Delete the product
-			const { status, error } = await tClient.api
-				.products({ id: standaloneTestId! })
-				.delete(undefined, {
-					fetch: { headers: { cookie: authCookie } }
-				})
+			const { status, error } = await tClient.api['product-examples']({
+				id: standaloneTestId!
+			}).delete(undefined, {
+				fetch: { headers: { cookie: authCookie } }
+			})
 
 			expect(status).toBe(200)
 			expect(error).toBeNull()
@@ -150,7 +205,7 @@ describe('Product Module Tests', () => {
 			const authCookie = await getAuthCookie()
 
 			// 1. SETUP: Create a product
-			const createRes = await tClient.api.products.post(
+			const createRes = await tClient.api['product-examples'].post(
 				{
 					name: 'Test Get Deleted',
 					price: 1500,
@@ -164,16 +219,16 @@ describe('Product Module Tests', () => {
 			expect(standaloneTestId).toBeDefined()
 
 			// 2. SETUP: Delete the product
-			await tClient.api
-				.products({ id: standaloneTestId! })
-				.delete(undefined, {
-					fetch: { headers: { cookie: authCookie } }
-				})
+			await tClient.api['product-examples']({
+				id: standaloneTestId!
+			}).delete(undefined, {
+				fetch: { headers: { cookie: authCookie } }
+			})
 
 			// 3. ACTION: Get the deleted product
-			const { status } = await tClient.api
-				.products({ id: standaloneTestId! })
-				.get()
+			const { status } = await tClient.api['product-examples']({
+				id: standaloneTestId!
+			}).get({ fetch: { headers: { cookie: authCookie } } })
 			expect(status).toBe(404)
 		})
 	})

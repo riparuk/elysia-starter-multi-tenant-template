@@ -9,8 +9,8 @@ src/
 ├── core/             # Framework-agnostic foundations (errors, response formats, interfaces)
 ├── lib/              # Wrappers for external services (database, auth, env)
 ├── middleware/       # Elysia middleware plugins
-├── modules/          # Feature modules grouped by domain (e.g., product, auth)
-│   └── product/
+├── modules/          # Feature modules grouped by domain (e.g., product-example, auth)
+│   └── product-example/
 │       ├── handler.ts   # Route definitions (Elysia group)
 │       ├── model.ts     # DTOs / request-response types
 │       ├── schema.ts    # Drizzle table schema
@@ -27,7 +27,7 @@ tests/
 └── modules/          # Integration tests per module
 ```
 
-- Use `src/modules/product/` as the canonical example for any new module.
+- Use `src/modules/product-example/` as the canonical example for any new module.
 - Register new module schemas in `drizzle/schemas.ts`.
 
 ---
@@ -62,8 +62,9 @@ tests/
 - **No magic strings:** Use enums or constants for status codes and error types.
 - **Don't use 'any' type:** Use proper types instead of 'any' as much as possible
 - **Multi-Tenant Scoping:** If a resource belongs to an organization, ensure its table has an `organizationId` foreign key (referencing `organization.id`). Use the `requireOrganization: true` macro in the handler to enforce tenant isolation and access `activeOrganizationId`. Service methods must always filter and insert data using the `organizationId`.
-- **Always make tests for new features:** For every new feature, create a new test file in the `tests/modules/` directory.
-- **Don't edit product module:** The product module is a template and should not be edited. Use it as a reference to create new modules.
+- **Always make tests for new features:** For every new feature or changes, create a new test or update existing test file in the `tests/modules/` directory.
+- **Don't edit product example module:** The product-example module is a template and should not be edited. Use it as a reference to create new modules.
+- **After changes, always run lint:fix and format:** Before committing, always run `bun run lint:fix` and `bun run format` to ensure your code is clean and consistent. If there are any lint errors, fix them.
 
 ---
 
@@ -119,7 +120,7 @@ describe("My Module Tests", () => {
 
 > **Note on Multi-Tenant Tests:** For endpoints using `requireOrganization: true`, you must first create an organization and set it as active on the client/test side (e.g., via `tClient.auth.api.createOrganization`) to ensure the `activeOrganizationId` is present in the session context.
 
-- See `tests/modules/product.test.ts` for a full example with create, read, and delete flows.
+- See `tests/modules/product-example.test.ts` for a full example with create, read, and delete flows.
 - See `tests/modules/auth.test.ts` for auth-specific test patterns.
 - Test file names mirror module names: `tests/modules/<module-name>.test.ts`.
 
